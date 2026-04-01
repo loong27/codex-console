@@ -11,7 +11,7 @@ import hashlib
 from typing import Optional
 from pathlib import Path
 
-from fastapi import FastAPI, Request, Form
+from fastapi import FastAPI, Request, Form, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
@@ -105,32 +105,49 @@ def create_app() -> FastAPI:
         return RedirectResponse(url=f"/login?next={request.url.path}", status_code=302)
 
     @app.get("/login", response_class=HTMLResponse)
-    async def login_page(request: Request, next: Optional[str] = "/"):
+    async def login_page(request: Request, next: Optional[str] = Query(default="/")):
         """登录页面"""
+        # 确保 next 是字符串类型，处理可能的数组参数
+        if isinstance(next, list):
+            next = next[0] if next else "/"
+        next = str(next) if next else "/"
         return templates.TemplateResponse(
             "login.html",
-            {"request": request, "error": "", "next": next or "/"}
+            {"request": request, "error": "", "next": next}
         )
 
     @app.post("/login")
-    async def login_submit(request: Request, password: str = Form(...), next: Optional[str] = "/"):
+    async def login_submit(
+        request: Request,
+        password: str = Form(...),
+        next: Optional[str] = Form(default="/")
+    ):
         """处理登录提交"""
+        # 确保 next 是字符串类型
+        if isinstance(next, list):
+            next = next[0] if next else "/"
+        next = str(next) if next else "/"
+
         expected = get_settings().webui_access_password.get_secret_value()
         if not secrets.compare_digest(password, expected):
             return templates.TemplateResponse(
                 "login.html",
-                {"request": request, "error": "密码错误", "next": next or "/"},
+                {"request": request, "error": "密码错误", "next": next},
                 status_code=401
             )
 
-        response = RedirectResponse(url=next or "/", status_code=302)
+        response = RedirectResponse(url=next, status_code=302)
         response.set_cookie("webui_auth", _auth_token(expected), httponly=True, samesite="lax")
         return response
 
     @app.get("/logout")
-    async def logout(request: Request, next: Optional[str] = "/login"):
+    async def logout(request: Request, next: Optional[str] = Query(default="/login")):
         """退出登录"""
-        response = RedirectResponse(url=next or "/login", status_code=302)
+        # 确保 next 是字符串类型
+        if isinstance(next, list):
+            next = next[0] if next else "/login"
+        next = str(next) if next else "/login"
+        response = RedirectResponse(url=next, status_code=302)
         response.delete_cookie("webui_auth")
         return response
 
