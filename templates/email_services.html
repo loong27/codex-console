@@ -213,6 +213,7 @@
                             <option value="freemail">Freemail（自部署 Cloudflare Worker）</option>
                             <option value="cloudmail">CloudMail（Cloudflare Workers 邮箱）</option>
                             <option value="imap">标准 IMAP（Gmail/QQ/163等）</option>
+                            <option value="cloudflare_forward_imap">Cloudflare 转发 IMAP</option>
                         </select>
                     </div>
                     <!-- MoeMail 字段 -->
@@ -331,6 +332,39 @@
                             <label for="custom-cm-subdomain">子域（可选）</label>
                             <input type="text" id="custom-cm-subdomain" name="cm_subdomain" placeholder="test">
                             <small style="color: var(--text-muted);">例如填写 "test"，生成的邮箱为 xxx@test.example.com</small>
+                        </div>
+                    </div>
+                    <!-- Cloudflare Forward IMAP 字段 -->
+                    <div id="add-cloudflare-forward-imap-fields" style="display:none;">
+                        <div class="form-group">
+                            <label for="custom-cfi-host">IMAP 服务器</label>
+                            <input type="text" id="custom-cfi-host" name="cfi_host" placeholder="imap.qq.com">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="custom-cfi-port">端口</label>
+                                <input type="number" id="custom-cfi-port" name="cfi_port" value="993" min="1" max="65535">
+                            </div>
+                            <div class="form-group">
+                                <label for="custom-cfi-use-ssl">使用 SSL</label>
+                                <select id="custom-cfi-use-ssl" name="cfi_use_ssl">
+                                    <option value="true">是</option>
+                                    <option value="false">否</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="custom-cfi-real-email">真实邮箱地址</label>
+                            <input type="email" id="custom-cfi-real-email" name="cfi_real_email" placeholder="your@qq.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="custom-cfi-password">密码/授权码</label>
+                            <input type="password" id="custom-cfi-password" name="cfi_password" placeholder="QQ 邮箱授权码">
+                        </div>
+                        <div class="form-group">
+                            <label for="custom-cfi-domains">虚拟邮箱域名列表</label>
+                            <input type="text" id="custom-cfi-domains" name="cfi_domains" placeholder="domain1.com,domain2.com">
+                            <small style="color: var(--text-muted);">多个域名用英文逗号分隔</small>
                         </div>
                     </div>
                     <div class="form-row">
@@ -495,6 +529,40 @@
                             <label for="edit-cm-subdomain">子域（可选）</label>
                             <input type="text" id="edit-cm-subdomain" name="cm_subdomain" placeholder="test">
                             <small style="color: var(--text-muted);">例如填写 "test"，生成的邮箱为 xxx@test.example.com</small>
+                        </div>
+                    </div>
+                    <!-- 编辑 Cloudflare Forward IMAP 字段 -->
+                    <div id="edit-cloudflare-forward-imap-fields" style="display:none;">
+                        <div class="form-group">
+                            <label for="edit-cfi-host">IMAP 服务器</label>
+                            <input type="text" id="edit-cfi-host" name="cfi_host" placeholder="imap.qq.com">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="edit-cfi-port">端口</label>
+                                <input type="number" id="edit-cfi-port" name="cfi_port" value="993" min="1" max="65535">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-cfi-use-ssl">使用 SSL</label>
+                                <select id="edit-cfi-use-ssl" name="cfi_use_ssl">
+                                    <option value="true">是</option>
+                                    <option value="false">否</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-cfi-real-email">真实邮箱地址</label>
+                            <input type="email" id="edit-cfi-real-email" name="cfi_real_email" placeholder="your@qq.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-cfi-password">密码/授权码</label>
+                            <input type="password" id="edit-cfi-password" name="cfi_password" placeholder="留空则不修改">
+                            <small style="color: var(--text-muted);">留空则保持原值不变</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-cfi-domains">虚拟邮箱域名列表</label>
+                            <input type="text" id="edit-cfi-domains" name="cfi_domains" placeholder="domain1.com,domain2.com">
+                            <small style="color: var(--text-muted);">多个域名用英文逗号分隔</small>
                         </div>
                     </div>
                     <div class="form-row">

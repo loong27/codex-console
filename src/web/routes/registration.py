@@ -214,6 +214,11 @@ def _normalize_email_service_config(
     elif service_type == EmailServiceType.DUCK_MAIL:
         if 'domain' in normalized and 'default_domain' not in normalized:
             normalized['default_domain'] = normalized.pop('domain')
+    elif service_type == EmailServiceType.CLOUDFLARE_FORWARD_IMAP:
+        if isinstance(normalized.get('domains'), str):
+            normalized['domains'] = [d.strip() for d in normalized['domains'].split(',') if d.strip()]
+        if isinstance(normalized.get('recipient_headers_priority'), str):
+            normalized['recipient_headers_priority'] = [h.strip() for h in normalized['recipient_headers_priority'].split(',') if h.strip()]
 
     if proxy_url and 'proxy_url' not in normalized:
         normalized['proxy_url'] = proxy_url
@@ -386,6 +391,20 @@ def _run_sync_registration_task(task_uuid: str, email_service_type: str, proxy: 
                         logger.info(f"使用数据库 IMAP 邮箱服务: {db_service.name}")
                     else:
                         raise ValueError("没有可用的 IMAP 邮箱服务，请先在邮箱服务中添加")
+                elif service_type == EmailServiceType.CLOUDFLARE_FORWARD_IMAP:
+                    from ...database.models import EmailService as EmailServiceModel
+
+                    db_service = db.query(EmailServiceModel).filter(
+                        EmailServiceModel.service_type == "cloudflare_forward_imap",
+                        EmailServiceModel.enabled == True
+                    ).order_by(EmailServiceModel.priority.asc()).first()
+
+                    if db_service and db_service.config:
+                        config = _normalize_email_service_config(service_type, db_service.config, actual_proxy_url)
+                        crud.update_registration_task(db, task_uuid, email_service_id=db_service.id)
+                        logger.info(f"使用数据库 Cloudflare Forward IMAP 服务: {db_service.name}")
+                    else:
+                        raise ValueError("没有可用的 Cloudflare Forward IMAP 服务，请先在邮箱服务中添加")
                 else:
                     config = email_service_config or {}
 
@@ -1185,6 +1204,11 @@ async def get_available_email_services():
             "available": False,
             "count": 0,
             "services": []
+        },
+        "cloudflare_forward_imap": {
+            "available": False,
+            "count": 0,
+            "services": []
         }
     }
 
@@ -1338,6 +1362,28 @@ async def get_available_email_services():
 
         result["cloud_mail"]["count"] = len(cloud_mail_services)
         result["cloud_mail"]["available"] = len(cloud_mail_services) > 0
+
+        # 获取 Cloudflare Forward IMAP 服务
+        cloudflare_forward_imap_services = db.query(EmailServiceModel).filter(
+            EmailServiceModel.service_type == "cloudflare_forward_imap",
+            EmailServiceModel.enabled == True
+        ).order_by(EmailServiceModel.priority.asc()).all()
+
+        for service in cloudflare_forward_imap_services:
+            config = service.config or {}
+            domains = config.get("domains", [])
+            domain_display = domains[0] if isinstance(domains, list) and domains else str(domains) if domains else ""
+
+            result["cloudflare_forward_imap"]["services"].append({
+                "id": service.id,
+                "name": service.name,
+                "type": "cloudflare_forward_imap",
+                "domains": domain_display,
+                "priority": service.priority
+            })
+
+        result["cloudflare_forward_imap"]["count"] = len(cloudflare_forward_imap_services)
+        result["cloudflare_forward_imap"]["available"] = len(cloudflare_forward_imap_services) > 0
 
     return result
 

@@ -147,6 +147,7 @@ async def get_email_services_stats():
             'duck_mail_count': 0,
             'freemail_count': 0,
             'imap_mail_count': 0,
+            'cloudflare_forward_imap_count': 0,
             'tempmail_available': True,  # 临时邮箱始终可用
             'enabled_count': enabled_count
         }
@@ -164,6 +165,8 @@ async def get_email_services_stats():
                 stats['freemail_count'] = count
             elif service_type == 'imap_mail':
                 stats['imap_mail_count'] = count
+            elif service_type == 'cloudflare_forward_imap':
+                stats['cloudflare_forward_imap_count'] = count
 
         return stats
 
@@ -245,6 +248,25 @@ async def get_service_types():
                     {"name": "use_ssl", "label": "使用 SSL", "required": False, "default": True},
                     {"name": "email", "label": "邮箱地址", "required": True},
                     {"name": "password", "label": "密码/授权码", "required": True, "secret": True},
+                ]
+            },
+            {
+                "value": "cloudflare_forward_imap",
+                "label": "Cloudflare 转发 IMAP",
+                "description": "Cloudflare Email Routing 转发到单个真实邮箱，通过 IMAP 读取虚拟邮箱验证码",
+                "config_fields": [
+                    {"name": "host", "label": "IMAP 服务器", "required": True, "placeholder": "imap.qq.com"},
+                    {"name": "port", "label": "端口", "required": False, "default": 993},
+                    {"name": "use_ssl", "label": "使用 SSL", "required": False, "default": True},
+                    {"name": "real_email", "label": "真实邮箱地址", "required": True},
+                    {"name": "password", "label": "密码/授权码", "required": True, "secret": True},
+                    {"name": "folder", "label": "邮箱文件夹", "required": False, "default": "INBOX"},
+                    {"name": "domains", "label": "虚拟邮箱域名列表", "required": True, "placeholder": "domain1.com,domain2.com"},
+                    {"name": "poll_interval", "label": "轮询间隔(秒)", "required": False, "default": 3},
+                    {"name": "timeout", "label": "超时时间(秒)", "required": False, "default": 30},
+                    {"name": "recipient_headers_priority", "label": "收件人头优先级", "required": False, "placeholder": "Delivered-To,X-Envelope-To,To,X-Original-To"},
+                    {"name": "require_openai_sender", "label": "仅匹配 OpenAI 发件人", "required": False, "default": True},
+                    {"name": "mark_seen_on_match", "label": "匹配后标记已读", "required": False, "default": True},
                 ]
             }
         ]

@@ -18,6 +18,7 @@ from .duck_mail import DuckMailService
 from .freemail import FreemailService
 from .imap_mail import ImapMailService
 from .cloud_mail import CloudMailService
+from .cloudflare_forward_imap import CloudflareForwardImapService
 
 # 注册服务
 EmailServiceFactory.register(EmailServiceType.TEMPMAIL, TempmailService)
@@ -28,6 +29,7 @@ EmailServiceFactory.register(EmailServiceType.DUCK_MAIL, DuckMailService)
 EmailServiceFactory.register(EmailServiceType.FREEMAIL, FreemailService)
 EmailServiceFactory.register(EmailServiceType.IMAP_MAIL, ImapMailService)
 EmailServiceFactory.register(EmailServiceType.CLOUD_MAIL, CloudMailService)
+EmailServiceFactory.register(EmailServiceType.CLOUDFLARE_FORWARD_IMAP, CloudflareForwardImapService)
 
 # 导出 Outlook 模块的额外内容
 from .outlook.base import (

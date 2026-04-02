@@ -39,6 +39,7 @@ class EmailServiceType(str, Enum):
     FREEMAIL = "freemail"
     IMAP_MAIL = "imap_mail"
     CLOUD_MAIL = "cloud_mail"
+    CLOUDFLARE_FORWARD_IMAP = "cloudflare_forward_imap"
 
 
 # ============================================================================
@@ -149,6 +150,21 @@ EMAIL_SERVICE_DEFAULTS = {
         "domain": "",
         "timeout": 30,
         "max_retries": 3,
+    },
+    "cloudflare_forward_imap": {
+        "host": "",
+        "port": 993,
+        "use_ssl": True,
+        "real_email": "",
+        "password": "",
+        "folder": "INBOX",
+        "domains": [],
+        "poll_interval": 3,
+        "timeout": 30,
+        "max_retries": 3,
+        "require_openai_sender": True,
+        "recipient_headers_priority": ["Delivered-To", "X-Envelope-To", "To", "X-Original-To"],
+        "mark_seen_on_match": True,
     }
 }
 

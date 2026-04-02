@@ -25,7 +25,8 @@ let availableServices = {
     temp_mail: { available: false, services: [] },
     duck_mail: { available: false, services: [] },
     freemail: { available: false, services: [] },
-    cloud_mail: { available: false, services: [] }
+    cloud_mail: { available: false, services: [] },
+    cloudflare_forward_imap: { available: false, services: [] }
 };
 
 // WebSocket 相关变量
@@ -384,6 +385,22 @@ function updateEmailServiceOptions() {
             option.value = `cloud_mail:${service.id}`;
             option.textContent = service.name + (service.domain ? ` (@${service.domain})` : '');
             option.dataset.type = 'cloud_mail';
+            option.dataset.serviceId = service.id;
+            optgroup.appendChild(option);
+        });
+
+        select.appendChild(optgroup);
+    }
+
+    if (availableServices.cloudflare_forward_imap && availableServices.cloudflare_forward_imap.available) {
+        const optgroup = document.createElement('optgroup');
+        optgroup.label = `📬 Cloudflare 转发 IMAP (${availableServices.cloudflare_forward_imap.count} 个服务)`;
+
+        availableServices.cloudflare_forward_imap.services.forEach(service => {
+            const option = document.createElement('option');
+            option.value = `cloudflare_forward_imap:${service.id}`;
+            option.textContent = service.name + (service.domains ? ` (@${service.domains})` : '');
+            option.dataset.type = 'cloudflare_forward_imap';
             option.dataset.serviceId = service.id;
             optgroup.appendChild(option);
         });

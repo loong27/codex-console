@@ -82,7 +82,8 @@ const CUSTOM_SUBTYPE_LABELS = {
     duckmail: '🦆 DuckMail（DuckMail API）',
     freemail: 'Freemail（自部署 Cloudflare Worker）',
     cloudmail: '☁️ CloudMail（Cloudflare Workers 邮箱）',
-    imap: '📧 IMAP 邮箱（Gmail/QQ/163等）'
+    imap: '📧 IMAP 邮箱（Gmail/QQ/163等）',
+    cloudflare_forward_imap: '📬 Cloudflare 转发 IMAP'
 };
 
 // 初始化
@@ -190,6 +191,8 @@ function switchAddSubType(subType) {
     elements.addFreemailFields.style.display = subType === 'freemail' ? '' : 'none';
     elements.addCloudmailFields.style.display = subType === 'cloudmail' ? '' : 'none';
     elements.addImapFields.style.display = subType === 'imap' ? '' : 'none';
+    const cfiFields = document.getElementById('add-cloudflare-forward-imap-fields');
+    if (cfiFields) cfiFields.style.display = subType === 'cloudflare_forward_imap' ? '' : 'none';
 }
 
 // 切换编辑表单子类型显示
@@ -201,6 +204,8 @@ function switchEditSubType(subType) {
     elements.editFreemailFields.style.display = subType === 'freemail' ? '' : 'none';
     elements.editCloudmailFields.style.display = subType === 'cloudmail' ? '' : 'none';
     elements.editImapFields.style.display = subType === 'imap' ? '' : 'none';
+    const cfiFields = document.getElementById('edit-cloudflare-forward-imap-fields');
+    if (cfiFields) cfiFields.style.display = subType === 'cloudflare_forward_imap' ? '' : 'none';
     elements.editCustomTypeBadge.textContent = CUSTOM_SUBTYPE_LABELS[subType] || CUSTOM_SUBTYPE_LABELS.moemail;
 }
 
@@ -317,13 +322,14 @@ function getCustomServiceAddress(service) {
 // 加载自定义邮箱服务（moe_mail + temp_mail + duck_mail + freemail 合并）
 async function loadCustomServices() {
     try {
-        const [r1, r2, r3, r4, r5, r6] = await Promise.all([
+        const [r1, r2, r3, r4, r5, r6, r7] = await Promise.all([
             api.get('/email-services?service_type=moe_mail'),
             api.get('/email-services?service_type=temp_mail'),
             api.get('/email-services?service_type=duck_mail'),
             api.get('/email-services?service_type=freemail'),
             api.get('/email-services?service_type=imap_mail'),
-            api.get('/email-services?service_type=cloud_mail')
+            api.get('/email-services?service_type=cloud_mail'),
+            api.get('/email-services?service_type=cloudflare_forward_imap')
         ]);
         customServices = [
             ...(r1.services || []).map(s => ({ ...s, _subType: 'moemail' })),
@@ -331,7 +337,8 @@ async function loadCustomServices() {
             ...(r3.services || []).map(s => ({ ...s, _subType: 'duckmail' })),
             ...(r4.services || []).map(s => ({ ...s, _subType: 'freemail' })),
             ...(r5.services || []).map(s => ({ ...s, _subType: 'imap' })),
-            ...(r6.services || []).map(s => ({ ...s, _subType: 'cloudmail' }))
+            ...(r6.services || []).map(s => ({ ...s, _subType: 'cloudmail' })),
+            ...(r7.services || []).map(s => ({ ...s, _subType: 'cloudflare_forward_imap' }))
         ];
 
         if (customServices.length === 0) {
@@ -495,6 +502,18 @@ async function handleAddCustom(e) {
         if (subdomain && subdomain.trim()) {
             config.subdomain = subdomain.trim();
         }
+    } else if (subType === 'cloudflare_forward_imap') {
+        serviceType = 'cloudflare_forward_imap';
+        const domainsInput = formData.get('cfi_domains');
+        const domains = domainsInput ? domainsInput.split(',').map(d => d.trim()).filter(d => d) : [];
+        config = {
+            host: formData.get('cfi_host'),
+            port: parseInt(formData.get('cfi_port'), 10) || 993,
+            use_ssl: formData.get('cfi_use_ssl') !== 'false',
+            real_email: formData.get('cfi_real_email'),
+            password: formData.get('cfi_password'),
+            domains: domains
+        };
     } else {
         serviceType = 'imap_mail';
         config = {
@@ -650,7 +669,9 @@ async function editCustomService(id, subType) {
                             ? 'cloudmail'
                             : service.service_type === 'imap_mail'
                                 ? 'imap'
-                                : 'moemail'
+                                : service.service_type === 'cloudflare_forward_imap'
+                                    ? 'cloudflare_forward_imap'
+                                    : 'moemail'
         );
 
         document.getElementById('edit-custom-id').value = service.id;
@@ -692,6 +713,16 @@ async function editCustomService(id, subType) {
             document.getElementById('edit-cm-domain').value = domainStr;
             // 设置子域
             document.getElementById('edit-cm-subdomain').value = service.config?.subdomain || '';
+        } else if (resolvedSubType === 'cloudflare_forward_imap') {
+            document.getElementById('edit-cfi-host').value = service.config?.host || '';
+            document.getElementById('edit-cfi-port').value = service.config?.port || 993;
+            document.getElementById('edit-cfi-use-ssl').value = service.config?.use_ssl !== false ? 'true' : 'false';
+            document.getElementById('edit-cfi-real-email').value = service.config?.real_email || '';
+            document.getElementById('edit-cfi-password').value = '';
+            document.getElementById('edit-cfi-password').placeholder = service.config?.password ? '已设置，留空保持不变' : '请输入密码/授权码';
+            const domains = service.config?.domains || [];
+            const domainsStr = Array.isArray(domains) ? domains.join(',') : String(domains || '');
+            document.getElementById('edit-cfi-domains').value = domainsStr;
         } else {
             document.getElementById('edit-imap-host').value = service.config?.host || '';
             document.getElementById('edit-imap-port').value = service.config?.port || 993;
@@ -764,6 +795,18 @@ async function handleEditCustom(e) {
         }
         const pwd = formData.get('cm_admin_password');
         if (pwd && pwd.trim()) config.admin_password = pwd.trim();
+    } else if (subType === 'cloudflare_forward_imap') {
+        const domainsInput = formData.get('cfi_domains');
+        const domains = domainsInput ? domainsInput.split(',').map(d => d.trim()).filter(d => d) : [];
+        config = {
+            host: formData.get('cfi_host'),
+            port: parseInt(formData.get('cfi_port'), 10) || 993,
+            use_ssl: formData.get('cfi_use_ssl') !== 'false',
+            real_email: formData.get('cfi_real_email'),
+            domains: domains
+        };
+        const pwd = formData.get('cfi_password');
+        if (pwd && pwd.trim()) config.password = pwd.trim();
     } else {
         config = {
             host: formData.get('imap_host'),
