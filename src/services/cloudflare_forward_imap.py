@@ -224,6 +224,9 @@ class CloudflareForwardImapService(BaseEmailService):
         pattern: str = None,
         otp_sent_at: Optional[float] = None,
     ) -> Optional[str]:
+        # 避免参数名遮蔽 email 模块
+        import email as email_module
+
         start_time = time.time()
         seen_ids: set = set()
         mail = None
@@ -252,7 +255,7 @@ class CloudflareForwardImapService(BaseEmailService):
                             continue
 
                         raw = msg_data[0][1]
-                        msg = email.message_from_bytes(raw)
+                        msg = email_module.message_from_bytes(raw)
 
                         if not self._match_target_email(msg, email):
                             continue

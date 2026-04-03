@@ -123,6 +123,9 @@ class ImapMailService(BaseEmailService):
         otp_sent_at: Optional[float] = None,
     ) -> Optional[str]:
         """轮询 IMAP 收件箱，获取 OpenAI 验证码"""
+        # 避免参数名遮蔽 email 模块
+        import email as email_module
+
         start_time = time.time()
         seen_ids: set = set()
         mail = None
@@ -152,7 +155,7 @@ class ImapMailService(BaseEmailService):
                             continue
 
                         raw = msg_data[0][1]
-                        msg = email.message_from_bytes(raw)
+                        msg = email_module.message_from_bytes(raw)
 
                         # 检查发件人
                         from_addr = self._decode_str(msg.get("From", ""))
